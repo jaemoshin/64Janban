@@ -61,6 +61,8 @@ def predict(meal_type, menu_items, dessert, event):
 
 # Streamlit UI
 st.title("🍛 군 급식 잔반 예측 프로그램")
+st.markdown("메뉴 정보를 입력하면 예상 잔반량을 예측합니다.")
+
 meal_type_k = st.selectbox("🍽️ 식사 종류", list(MEAL_TYPE_MAP.keys()))
 dessert_k = st.selectbox("🍰 디저트", list(DESSERT_MAP.keys()))
 event_k = st.selectbox("🎯 행사 종류", list(EVENT_MAP.keys()))
@@ -85,3 +87,22 @@ if st.button("🧮 예측하기"):
 
     st.write("### 🧾 개별 음식 잔반 예측")
     st.json(indiv)
+
+# 🔧 Additional Percentage Slider and Button
+st.markdown("---")
+st.subheader("🔧 특정 비율로 잔반량 계산")
+
+percentage = st.slider("🔧 예측 잔반의 몇 퍼센트를 반환할까요?", min_value=1, max_value=100, value=50, step=1)
+
+if st.button("🔄 특정 비율로 잔반 계산하기"):
+    total, indiv = predict(
+        MEAL_TYPE_MAP[meal_type_k],
+        menu_input,
+        DESSERT_MAP[dessert_k],
+        EVENT_MAP[event_k]
+    )
+    if indiv:
+        scaled = {k: f"{v * percentage / 100:.2f}인분" for k, v in indiv.items()}
+        st.success(f"✅ 예측 완료! ({percentage}% 기준)")
+        st.write(f"### 🍽️ 예상 잔반량 - {percentage}% 기준 (각 메뉴별)")
+        st.json(scaled)
