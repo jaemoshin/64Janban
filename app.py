@@ -55,11 +55,33 @@ def predict(meal_type, menu_items, dessert, event):
     b = H_active.T @ np.ones(H_active.shape[0]) * total_pred
     weights, _ = nnls(A, b)
     weights = weights / (weights.sum() + 1e-10) * total_pred
-    result = {mlb_menu.classes_[i]: round(weights[j], 2) for j, i in enumerate(active_idx)}
+
+    # 오차 계산
+    matched = data[(data["Meal Type"] == meal_type) &
+                   (data["Dessert"] == dessert) &
+                   (data["Menu"].apply(lambda x: sorted(x) == sorted(menu_list))) &
+                   (data["Event"].apply(lambda x: sorted(x) == sorted([event])))]
+    total_true = matched["leftovers"].values[0] if not matched.empty else total_pred
+    delta_T = abs(total_pred - total_true)
+
+    V = mlb_menu.transform(data["Menu"])
+    W = nmf.transform(V)
+    V_hat = W @ H
+    recon_error_vector = np.abs(V - V_hat).max(axis=0)
+    cond_H = np.linalg.cond(H_active)
+
+    result = {}
+    for i, idx in enumerate(active_idx):
+        item = mlb_menu.classes_[idx]
+        pred = weights[i]
+        e_i = recon_error_vector[idx]
+        bound = cond_H * delta_T + e_i
+        corrected = max(pred - bound, 0)
+        result[item] = round(corrected, 2)
 
     return total_pred, result
 
-# 🎨 Streamlit UI with Korean Labels
+# 🎨 Streamlit UI
 st.title("🍛 군 급식 잔반 예측 프로그램")
 st.markdown("메뉴 정보를 입력하면 예상 잔반량을 예측합니다.")
 
@@ -74,10 +96,8 @@ dessert = DESSERT_MAP[dessert_korean]
 event_korean = st.selectbox("🎯 행사 선택", list(EVENT_MAP.keys()))
 event = EVENT_MAP[event_korean]
 
-# ✅ Enter number of people
 num_people = st.number_input("👥 식사 인원 수", min_value=1, value=100)
 
-# ✅ Predict button
 if st.button("🧮 예측하기"):
     with st.spinner("계산 중..."):
         total, indiv = predict(meal_type, menu_items, dessert, event)
@@ -86,10 +106,9 @@ if st.button("🧮 예측하기"):
         }
         st.success("✅ 예측 완료!")
         st.subheader(f"예상 전체 잔반량: {total * num_people / 1000:.2f} kg")
-        st.write("### 🍽️ 개별 음식 잔반 예측")
+        st.write("### 🍽️ 개별 음식 잔반 예측 (오차 반영)")
         st.json(scaled_predictions)
 
-# 🔧 Additional Percentage Slider and Button
 st.markdown("---")
 st.subheader("🔧 특정 비율로 잔반량 계산")
 
@@ -103,5 +122,6 @@ if st.button("🔄 특정 비율로 잔반 계산하기"):
         }
         st.success(f"✅ 예측 완료! ({percentage}% 기준)")
         st.subheader(f"예상 전체 잔반량: {total * num_people * (percentage / 100) / 1000:.2f} kg")
-        st.write(f"### 🍽️ 개별 음식 잔반 예측 ({percentage}% 기준)")
+        st.write(f"### 🍽️ 개별 음식 잔반 예측 ({percentage}% 기준, 오차 반영)")
         st.json(scaled_predictions)
+
