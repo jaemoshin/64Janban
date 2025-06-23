@@ -74,22 +74,20 @@ dessert = DESSERT_MAP[dessert_korean]
 event_korean = st.selectbox("🎯 행사 선택", list(EVENT_MAP.keys()))
 event = EVENT_MAP[event_korean]
 
-# ✅ NEW: Enter number of people
+# ✅ Enter number of people
 num_people = st.number_input("👥 식사 인원 수", min_value=1, value=100)
-
 
 # ✅ Predict button
 if st.button("🧮 예측하기"):
     with st.spinner("계산 중..."):
-        predictions = predict_leftovers(meal_type, menu_items, dessert, event)
-        if predictions:
-            scaled_predictions = {
-                k: f"{float(v.split()[0]) * num_people / 1000:.2f} kg ± {float(v.split()[2]) * num_people / 1000:.2f} kg {v.split()[3].replace('((', '(').replace('))', ')')}"
-                for k, v in predictions.items()
-            }
-            st.success("✅ 예측 완료!")
-            st.write("### 🍽️ 예상 잔반량 (각 메뉴별)")
-            st.json(scaled_predictions)
+        total, indiv = predict(meal_type, menu_items, dessert, event)
+        scaled_predictions = {
+            k: f"{v * num_people / 1000:.2f} kg" for k, v in indiv.items()
+        }
+        st.success("✅ 예측 완료!")
+        st.subheader(f"예상 전체 잔반량: {total * num_people / 1000:.2f} kg")
+        st.write("### 🍽️ 개별 음식 잔반 예측")
+        st.json(scaled_predictions)
 
 # 🔧 Additional Percentage Slider and Button
 st.markdown("---")
@@ -99,12 +97,11 @@ percentage = st.slider("🔧 예측 잔반의 몇 퍼센트를 반환할까요?"
 
 if st.button("🔄 특정 비율로 잔반 계산하기"):
     with st.spinner("계산 중..."):
-        predictions = predict_leftovers(meal_type, menu_items, dessert, event)
-        if predictions:
-            scaled_predictions = {
-                k: f"{float(v.split()[0]) * num_people * (percentage / 100) / 1000:.2f} kg ± {float(v.split()[2]) * num_people * (percentage / 100) / 1000:.2f} kg {v.split()[3].replace('((', '(').replace('))', ')')}"
-                for k, v in predictions.items()
-            }
-            st.success(f"✅ 예측 완료! ({percentage}% 기준)")
-            st.write(f"### 🍽️ 예상 잔반량 - {percentage}% 기준 (각 메뉴별)")
-            st.json(scaled_predictions)
+        total, indiv = predict(meal_type, menu_items, dessert, event)
+        scaled_predictions = {
+            k: f"{v * num_people * (percentage / 100) / 1000:.2f} kg" for k, v in indiv.items()
+        }
+        st.success(f"✅ 예측 완료! ({percentage}% 기준)")
+        st.subheader(f"예상 전체 잔반량: {total * num_people * (percentage / 100) / 1000:.2f} kg")
+        st.write(f"### 🍽️ 개별 음식 잔반 예측 ({percentage}% 기준)")
+        st.json(scaled_predictions)
