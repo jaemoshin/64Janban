@@ -64,7 +64,7 @@ def predict(meal_type: str, menu_items: str, dessert: str, event: str):
     w, _ = nnls(A, b)
     w = w / (w.sum() + 1e-10) * total_pred
 
-        # --- Tight error‑bound correction (leveraged ΔT + recon error) ---
+    # --- Tight error‑bound correction (leveraged ΔT + recon error) ---
     matched = data[(data["Meal Type"] == meal_type) &
                    (data["Dessert"] == dessert) &
                    (data["Menu"].apply(lambda x: sorted(x) == sorted(menu_list))) &
