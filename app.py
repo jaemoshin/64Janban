@@ -107,16 +107,7 @@ num_people = st.number_input("👥 식사 인원 수", min_value=1, value=100)
 meal_type = MEAL_TYPE_MAP[meal_type_k]
 dessert = DESSERT_MAP[dessert_k]
 event = EVENT_MAP[event_k]
-"""
-if st.button("🧮 예측하기"):
-    with st.spinner("계산 중..."):
-        total, indiv = predict(meal_type, menu_items, dessert, event)
-        scaled = {k: f"{v * num_people / 1000:.2f} kg" for k, v in indiv.items()}
-        st.success("✅ 예측 완료!")
-        st.subheader(f"예상 전체 잔반량: {total * num_people / 1000:.2f} kg")
-        st.write("### 🍽️ 개별 음식 잔반 예측 (오차 반영)")
-        st.json(scaled)
-"""
+
 st.markdown("---")
 st.subheader("🔧 특정 비율로 잔반량 계산")
 percentage = st.slider("🔧 예측 잔반의 몇 퍼센트를 반환할까요?", 1, 100, 50, 1)
